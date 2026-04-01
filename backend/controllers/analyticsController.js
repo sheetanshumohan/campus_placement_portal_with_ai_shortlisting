@@ -11,13 +11,23 @@ export const getTPOAnalytics = async (req, res) => {
     // 1. Get TPO's college name
     const tpoProfile = await TPOProfile.findOne({ user: req.user._id });
     if (!tpoProfile || !tpoProfile.collegeName) {
-      return res.status(400).json({ message: "TPO profile incomplete: Missing college name." });
+      return res.json({
+        totalCompanies: 0,
+        placedStudents: [],
+        topSkills: [],
+        placementsByBranch: []
+      });
     }
     const tpoCollege = tpoProfile.collegeName;
 
     // 2. Find students belonging to this college
-    const students = await StudentProfile.find({ collegeName: tpoCollege }).select('user');
+    const students = await StudentProfile.find({ collegeName: tpoCollege }).select('user major');
     const studentUserIds = students.map(s => s.user);
+
+    const studentMajorMap = {};
+    students.forEach(s => {
+       studentMajorMap[s.user.toString()] = s.major || 'Unknown Branch';
+    });
 
     // 3. Shows a list of students placed at different companies (Filtered by college)
     const placedApplications = await Application.find({ 
@@ -27,11 +37,23 @@ export const getTPOAnalytics = async (req, res) => {
       .populate('student', 'name email')
       .populate('job', 'jobCompany role');
 
-    const placedStudents = placedApplications.map(app => ({
-      studentName: app.student.name,
-      studentEmail: app.student.email,
-      company: app.job?.jobCompany || 'Unknown Company',
-      role: app.job?.role || 'Unknown Role'
+    const placementsByBranchCounts = {};
+
+    const placedStudents = placedApplications.map(app => {
+      const branch = studentMajorMap[app.student._id.toString()] || 'Unknown Branch';
+      placementsByBranchCounts[branch] = (placementsByBranchCounts[branch] || 0) + 1;
+
+      return {
+        studentName: app.student.name,
+        studentEmail: app.student.email,
+        branch: branch,
+        company: app.job?.jobCompany || 'Unknown Company',
+        role: app.job?.role || 'Unknown Role'
+      };
+    });
+
+    const placementsByBranch = Object.entries(placementsByBranchCounts).map(entry => ({
+      branch: entry[0], count: entry[1]
     }));
 
     // 4. Total No of Companies Visited & Skills required
@@ -70,11 +92,7 @@ export const getTPOAnalytics = async (req, res) => {
       totalCompanies,
       placedStudents,
       topSkills,
-      placeholders: {
-        percentagePlacedByBranch: "Data insufficient yet",
-        averagePackage: "Data insufficient yet",
-        comparisonToLastYear: "Data insufficient yet"
-      }
+      placementsByBranch
     });
 
   } catch (error) {

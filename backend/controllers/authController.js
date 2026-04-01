@@ -10,7 +10,7 @@ const generateToken = (id) => {
 };
 
 export const registerUser = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, collegeName } = req.body;
 
   try {
     const userExists = await User.findOne({ email });
@@ -24,10 +24,13 @@ export const registerUser = async (req, res) => {
     });
 
     if (user) {
-      // Create empty profile based on role
+      // Create profile based on role
       if (role === 'Student') await StudentProfile.create({ user: user._id });
       else if (role === 'Recruiter') await RecruiterProfile.create({ user: user._id });
-      else if (role === 'TPO') await TPOProfile.create({ user: user._id });
+      else if (role === 'TPO') await TPOProfile.create({ 
+        user: user._id, 
+        collegeName: collegeName || '' 
+      });
 
       res.status(201).json({
         _id: user._id,

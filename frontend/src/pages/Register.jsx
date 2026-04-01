@@ -2,10 +2,10 @@ import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import api from '../api';
-import { UserPlus, Mail, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
+import { UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Building2 } from 'lucide-react';
 
 const Register = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Student' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Student', collegeName: '' });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const { login } = useContext(AuthContext);
@@ -62,6 +62,23 @@ const Register = () => {
               ))}
             </div>
           </div>
+
+          {formData.role === 'TPO' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">College Name</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                  <Building2 size={18} />
+                </div>
+                <input 
+                  type="text" required 
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition" 
+                  placeholder="Enter your college name"
+                  value={formData.collegeName} onChange={(e) => setFormData({...formData, collegeName: e.target.value})}
+                />
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
